@@ -9,7 +9,8 @@ stardock = library(
     'src/stardock/index.cc',
     'src/stardock/point.cc',
     'src/stardock/diff.cc',
-    'src/stardock/transfer.cc'
+    'src/stardock/transfer.cc',
+    'src/stardock/api.cc'
   ], include_directories: includes
 )
 
