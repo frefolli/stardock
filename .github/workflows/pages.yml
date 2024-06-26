@@ -1,10 +1,13 @@
 # Simple workflow for deploying static content to GitHub Pages
 name: Deploy static content to Pages
+env:
+ BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["amogus"]
+    branches:
+      - 'master'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -21,8 +24,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Single deploy job since we're just deploying
-  deploy:
+  pages:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
