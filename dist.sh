@@ -3,7 +3,7 @@ set -e
 PKGNAME=stardock
 VERSION=1.0.0
 PKGREL=1
-ARCH=$(uname -p)
+ARCH=x86_64
 TARGETDIR=target
 
 function _install_bin() {
