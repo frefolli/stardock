@@ -1,3 +1,4 @@
+#include "stardock/diff.hh"
 #include "stardock/transfer.hh"
 #include <cstdlib>
 #include <cstring>
@@ -13,6 +14,7 @@ struct CliConfig {
   bool asym_diff = false;
   bool sym_diff = false;
   bool transfer = false;
+  bool index = false;
   std::string src = "";
   std::string dst = "";
 };
@@ -63,7 +65,55 @@ inline void PrintHelp(const char* exe) {
     std::cout << "    -A/--asym         do asymmetric diff (src --> dst)" << std::endl;
     std::cout << "    -S/--sym          do symmetric diff (src <-> dst)" << std::endl;
     std::cout << "    -T/--transfer     do transfer (according to diff)" << std::endl;
+    std::cout << "    -I/--index        do index (preventive for transfer and diff)" << std::endl;
     std::exit(0);
+}
+
+inline void DoTransfer(const CliConfig& cli_config, const stardock::Point& src_point,
+                       const stardock::Point& dst_point, const stardock::Diff& diff) {
+  stardock::Transfer transfer {
+    .src = src_point,
+    .dst = dst_point,
+    .diff = diff
+  };
+  transfer.apply(cli_config.verbose);
+}
+
+inline void DoDiff(const CliConfig& cli_config) {
+  assert(!(cli_config.asym_diff && cli_config.sym_diff));
+  assert(cli_config.src.size() > 0);
+  assert(cli_config.dst.size() > 0);
+  
+  stardock::Point src_point, dst_point;
+  Open(src_point, cli_config.src, cli_config.refresh);
+  Open(dst_point, cli_config.dst, cli_config.refresh);
+
+  stardock::Diff diff;
+  if (cli_config.asym_diff) {
+    diff.asymmetric(src_point, dst_point);
+  } else {
+    diff.symmetric(src_point, dst_point);
+  }
+
+  if (cli_config.transfer) {
+    DoTransfer(cli_config, src_point, dst_point, diff);
+  } else {
+    if (cli_config.verbose) {
+      std::cout << "src: " << cli_config.src << std::endl;
+      std::cout << "dst: " << cli_config.dst << std::endl;
+      std::cout << diff << std::endl;
+    }
+  }
+}
+
+inline void DoIndex(const CliConfig& cli_config, std::string path) {
+  stardock::Point point;
+  Open(point, path, cli_config.refresh);
+  if (cli_config.verbose) {
+    std::cout << "Indexed " << point.location << std::endl;
+    std::cout << "Indexed " << point.index.entries.size() << " files" << std::endl;
+    std::cout << point.index << std::endl;
+  }
 }
 
 int main(int argc, char** args) {
@@ -77,53 +127,30 @@ int main(int argc, char** args) {
        || AddBoolFlag(args, argc, i, "-A", "--asym", cli_config.asym_diff)
        || AddBoolFlag(args, argc, i, "-S", "--sym", cli_config.sym_diff)
        || AddBoolFlag(args, argc, i, "-T", "--transfer", cli_config.transfer)
+       || AddBoolFlag(args, argc, i, "-I", "--index", cli_config.index)
     )) {
       std::cerr << "unknown argument '" << args[i] << "'" << std::endl;
       std::exit(1);
     }
   }
-  
   if (cli_config.help) {
     PrintHelp(args[0]);
   }
 
-  assert(!(cli_config.asym_diff && cli_config.sym_diff));
-
   if (cli_config.asym_diff || cli_config.sym_diff) {
-    assert(cli_config.src != "");
-    assert(cli_config.dst != "");
-    
-    stardock::Point src_point, dst_point;
-    Open(src_point, cli_config.src, cli_config.refresh);
-    Open(dst_point, cli_config.dst, cli_config.refresh);
-
-    stardock::Diff diff;
-    if (cli_config.asym_diff) {
-      diff.asymmetric(src_point, dst_point);
-    } else {
-      diff.symmetric(src_point, dst_point);
+    DoDiff(cli_config);
+  } else if (cli_config.index) {
+    assert(cli_config.src.size() > 0 || cli_config.dst.size() > 0);
+    if (cli_config.src.size() > 0) {
+      DoIndex(cli_config, cli_config.src);
     }
-
-    if (cli_config.transfer) {
-      stardock::Transfer transfer {
-        .src = src_point,
-        .dst = dst_point,
-        .diff = diff
-      };
-      transfer.apply(cli_config.verbose);
-    } else {
-      if (cli_config.verbose) {
-        std::cout << "src: " << cli_config.src << std::endl;
-        std::cout << "dst: " << cli_config.dst << std::endl;
-        std::cout << diff << std::endl;
-      }
+    if (cli_config.dst.size() > 0) {
+      DoIndex(cli_config, cli_config.dst);
     }
-  } else {
-    if (cli_config.transfer) {
+  } else if (cli_config.transfer) {
       std::cerr << "transfer action needs one of the Sym/Asym options supplied" << std::endl;
       std::exit(1);
-    }
-
+  }  else {
     PrintHelp(args[0]);
   }
 }
