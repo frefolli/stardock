@@ -20,9 +20,6 @@ permissions:
 
 jobs:
   release:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: archlinux-latex
     steps:
       - name: Checkout Branch
