@@ -15,6 +15,10 @@ namespace stardock {
 
       void dump(std::ofstream& out) const;
       void load(std::ifstream& in);
+
+      inline bool operator<(const Entry& other) {
+        return path < other.path;
+      }
     };
     std::vector<Entry> entries;
 

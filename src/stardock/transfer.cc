@@ -22,7 +22,7 @@ inline void SendFiles(const stardock::Point& src, const stardock::Point& dst, co
     }
     std::string src_path = src.location + "/" + path;
     std::string dst_path = dst.location + "/" + path;
-    std::filesystem::copy_file(src_path, dst_path);
+    std::filesystem::copy_file(src_path, dst_path, std::filesystem::copy_options::overwrite_existing);
   }
 }
 

@@ -1,4 +1,4 @@
-#include <iostream>
+#include <algorithm>
 #include <stardock/point.hh>
 #include <sys/stat.h>
 #include <string>
@@ -45,5 +45,6 @@ bool stardock::Point::create(std::string location) {
   std::string index_file = location + "/.index.bin";
   index.entries.clear();
   build(location);
+  std::sort(index.entries.begin(), index.entries.end());
   return index.dump(index_file);
 }
