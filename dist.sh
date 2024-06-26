@@ -2,6 +2,8 @@
 set -e
 PKGNAME=stardock
 VERSION=1.0.0
+PKGREL=1
+ARCH=${uname -p}
 TARGETDIR=target
 
 function _install_bin() {
@@ -74,20 +76,32 @@ function _build_arch_package() {
   cd $DIR
 }
 
+function _sign_rpm_package() {
+  IN=$1
+  rpm --addsign $IN
+}
+
 function _package_rpm() {
   _setup_rpm_buildtree
   BIN_PACKAGE=${TARGETDIR}/rpm/SOURCES/${PKGNAME}-${VERSION}
   DEVEL_PACKAGE=${TARGETDIR}/rpm/SOURCES/${PKGNAME}-devel-${VERSION}
+  BIN_RPM=${TARGETDIR}/rpm/RPMS/${ARCH}/${PKGNAME}-${VERSION}-${PKGREL}.${ARCH}.rpm
+  DEVEL_RPM=${TARGETDIR}/rpm/RPMS/${ARCH}/${PKGNAME}-devel-${VERSION}-${PKGREL}.${ARCH}.rpm
+  rm -rf ${BIN_PACKAGE} ${BIN_RPM}
+  rm -rf ${DEVEL_PACKAGE} ${DEVEL_RPM}
+
   _reset ${BIN_PACKAGE}
   _reset ${DEVEL_PACKAGE}
   _install_bin ${BIN_PACKAGE}
   _install_devel ${DEVEL_PACKAGE}
   _compress ${BIN_PACKAGE}
   _compress ${DEVEL_PACKAGE}
-  ./${PKGNAME}.spec.sh ${BIN_PACKAGE} ${PKGNAME} ${VERSION} > ${TARGETDIR}/rpm/SPECS/${PKGNAME}.spec
-  ./${PKGNAME}-devel.spec.sh ${DEVEL_PACKAGE} ${PKGNAME} ${VERSION} > ${TARGETDIR}/rpm/SPECS/${PKGNAME}-devel.spec
+  ./${PKGNAME}.spec.sh ${BIN_PACKAGE} ${PKGNAME} ${VERSION} ${PKGREL} ${ARCH} > ${TARGETDIR}/rpm/SPECS/${PKGNAME}.spec
+  ./${PKGNAME}-devel.spec.sh ${DEVEL_PACKAGE} ${PKGNAME} ${VERSION} ${PKGREL} ${ARCH} > ${TARGETDIR}/rpm/SPECS/${PKGNAME}-devel.spec
   _build_rpm_package ${PKGNAME}.spec
   _build_rpm_package ${PKGNAME}-devel.spec
+  _sign_rpm_package ${BIN_RPM}
+  _sign_rpm_package ${DEVEL_RPM}
 }
 
 function _package_arch() {
@@ -97,7 +111,7 @@ function _package_arch() {
   _install_bin ${PACKAGE}
   _install_devel ${PACKAGE}
   _compress ${PACKAGE}
-  ./PKGBUILD.sh ${PACKAGE} ${PKGNAME} ${VERSION} > ${TARGETDIR}/arch/PKGBUILD
+  ./PKGBUILD.sh ${PACKAGE} ${PKGNAME} ${VERSION} ${PKGREL} ${ARCH} > ${TARGETDIR}/arch/PKGBUILD
   _build_arch_package
 }
 

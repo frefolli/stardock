@@ -2,12 +2,14 @@
 PACKAGE=$1
 PKGNAME=$2
 VERSION=$3
+PKGREL=$4
+ARCH=$5
 
 echo "Name:           ${PKGNAME}"
 echo "Version:        ${VERSION}"
-echo "Release:        1%{?dist}"
+echo "Release:        ${PKGREL}%{?dist}"
 echo "Summary:        ${PKGNAME} - directory synchronizer"
-echo "BuildArch:      noarch"
+echo "BuildArch:      ${ARCH}"
 echo ""
 echo "License:        GPL-3.0-or-later"
 echo "Source:         ${PKGNAME}-${VERSION}.tar.gz"
