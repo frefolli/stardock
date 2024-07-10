@@ -7,4 +7,5 @@
 #include <stardock/transfer.hh>
 #include <stardock/config.hh>
 #include <stardock/api.hh>
+#include <stardock/align.hh>
 #endif//STARDOCK_HH

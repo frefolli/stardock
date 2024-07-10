@@ -4,7 +4,7 @@
 #include <iostream>
 #include <stardock.hh>
 
-inline bool AddBoolFlag(char** args, uint64_t argc, uint64_t& i, const char* short_flag, const char* long_flag, bool& recipient) {
+inline bool AddBoolFlag(char** args, uint64_t /*argc*/, uint64_t& i, const char* short_flag, const char* long_flag, bool& recipient) {
   if (std::strcmp(short_flag, args[i]) == 0 || std::strcmp(long_flag, args[i]) == 0) {
     recipient = true;
     return true;
@@ -37,13 +37,14 @@ inline void PrintHelp(const char* exe) {
     std::cout << "    -A/--asym         do asymmetric diff (src --> dst)" << std::endl;
     std::cout << "    -S/--sym          do symmetric diff (src <-> dst)" << std::endl;
     std::cout << "    -T/--transfer     do transfer (according to diff)" << std::endl;
+    std::cout << "    -R/--align        do align (according to diff)" << std::endl;
     std::cout << "    -I/--index        do index (preventive for transfer and diff)" << std::endl;
     std::exit(0);
 }
 
 int main(int argc, char** args) {
   stardock::Config cli_config;
-  for (uint64_t i = 1; i < argc; ++i) {
+  for (uint64_t i = 1; i < (uint64_t) argc; ++i) {
     if (!(AddBoolFlag(args, argc, i, "-h", "--help", cli_config.help)
        || AddBoolFlag(args, argc, i, "-r", "--refresh", cli_config.refresh)
        || AddBoolFlag(args, argc, i, "-v", "--verbose", cli_config.verbose)
@@ -52,6 +53,7 @@ int main(int argc, char** args) {
        || AddBoolFlag(args, argc, i, "-A", "--asym", cli_config.asym_diff)
        || AddBoolFlag(args, argc, i, "-S", "--sym", cli_config.sym_diff)
        || AddBoolFlag(args, argc, i, "-T", "--transfer", cli_config.transfer)
+       || AddBoolFlag(args, argc, i, "-R", "--align", cli_config.transfer)
        || AddBoolFlag(args, argc, i, "-I", "--index", cli_config.index)
     )) {
       std::cerr << "unknown argument '" << args[i] << "'" << std::endl;

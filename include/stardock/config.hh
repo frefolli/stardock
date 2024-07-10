@@ -10,6 +10,7 @@ namespace stardock {
     bool asym_diff = false;
     bool sym_diff = false;
     bool transfer = false;
+    bool align = false;
     bool index = false;
     std::string src = "";
     std::string dst = "";

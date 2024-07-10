@@ -11,6 +11,16 @@ void Open(stardock::Point& point, std::string location, bool refresh = false) {
   }
 }
 
+inline void DoIndex(const stardock::Config& config, std::string path) {
+  stardock::Point point;
+  Open(point, path, config.refresh);
+  if (config.verbose) {
+    std::cout << "Indexed " << point.location << std::endl;
+    std::cout << "Indexed " << point.index.entries.size() << " files" << std::endl;
+    std::cout << point.index << std::endl;
+  }
+}
+
 template<typename T>
 void Flush(const T& diff, std::string filepath) {
   std::ofstream out (filepath);
@@ -26,6 +36,16 @@ inline void DoTransfer(const stardock::Config& config, const stardock::Point& sr
     .diff = diff
   };
   transfer.apply(config.verbose);
+}
+
+inline void DoAlign(const stardock::Config& config, const stardock::Point& src_point,
+                       const stardock::Point& dst_point, const stardock::Diff& diff) {
+  stardock::Align align {
+    .src = src_point,
+    .dst = dst_point,
+    .diff = diff
+  };
+  align.apply(config.verbose);
 }
 
 inline void DoDiff(const stardock::Config& config) {
@@ -46,22 +66,20 @@ inline void DoDiff(const stardock::Config& config) {
 
   if (config.transfer) {
     DoTransfer(config, src_point, dst_point, diff);
+    // TODO: merge indexes instead
+    DoIndex(config, src_point.location);
+    DoIndex(config, dst_point.location);
+  } else if (config.align) {
+    DoAlign(config, src_point, dst_point, diff);
+    // TODO: merge indexes instead
+    DoIndex(config, src_point.location);
+    DoIndex(config, dst_point.location);
   } else {
     if (config.verbose) {
       std::cout << "src: " << config.src << std::endl;
       std::cout << "dst: " << config.dst << std::endl;
       std::cout << diff << std::endl;
     }
-  }
-}
-
-inline void DoIndex(const stardock::Config& config, std::string path) {
-  stardock::Point point;
-  Open(point, path, config.refresh);
-  if (config.verbose) {
-    std::cout << "Indexed " << point.location << std::endl;
-    std::cout << "Indexed " << point.index.entries.size() << " files" << std::endl;
-    std::cout << point.index << std::endl;
   }
 }
 
