@@ -87,6 +87,11 @@ void stardock::Index::clear() {
   n_of_entries = 0;
   entries_size = 0;
   paths_size = 0;
+
+  entries_size = INDEX_ENTRIES_INCREMENT;
+  paths_size = INDEX_PATHS_INCREMENT;
+  entries = (Entry*) std::malloc(sizeof(Entry) * entries_size);
+  paths = (char*) std::malloc(sizeof(char) * paths_size);
 }
 
 void stardock::Index::sort() {

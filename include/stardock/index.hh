@@ -12,12 +12,12 @@ namespace stardock {
       uint64_t file_size;
       uint64_t modified;
     };
-    char* paths;
-    Entry* entries;
-    uint64_t n_of_entries;
-    uint64_t n_of_chars;
-    uint64_t entries_size;
-    uint64_t paths_size;
+    char* paths = nullptr;
+    Entry* entries = nullptr;
+    uint64_t n_of_entries = 0;
+    uint64_t n_of_chars = 0;
+    uint64_t entries_size = 0;
+    uint64_t paths_size = 0;
 
     void push_back(std::string path, uint64_t file_size, uint64_t modified);
 
