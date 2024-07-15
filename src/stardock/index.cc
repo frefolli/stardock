@@ -1,32 +1,21 @@
+#include <cstdlib>
+#include <cstring>
 #include <stardock/index.hh>
+#include <stardock/memory.hh>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
-void stardock::Index::Entry::dump(std::ofstream& out) const {
-  out.write(reinterpret_cast<const char*>(&file_size), sizeof(file_size));
-  out.write(reinterpret_cast<const char*>(&modified), sizeof(modified));
-  uint64_t length = path.size();
-  out.write(reinterpret_cast<const char*>(&length), sizeof(length));
-  out.write(path.c_str(), length);
-}
-
-void stardock::Index::Entry::load(std::ifstream& in) {
-  in.read(reinterpret_cast<char*>(&file_size), sizeof(file_size));
-  in.read(reinterpret_cast<char*>(&modified), sizeof(modified));
-  uint64_t length = 0;
-  in.read(reinterpret_cast<char*>(&length), sizeof(length));
-  path.resize(length);
-  in.read(path.data(), length);
-}
+constexpr uint64_t INDEX_ENTRIES_INCREMENT = 50;
+constexpr uint64_t INDEX_PATHS_INCREMENT = 10 * INDEX_ENTRIES_INCREMENT;
 
 bool stardock::Index::dump(std::string path) const {
   std::ofstream out(path, std::ios::binary | std::ios::out | std::ios::trunc);
   if (out.is_open()) {
-    const uint64_t length = entries.size();
-    out.write(reinterpret_cast<const char*>(&length), sizeof(length));
-    for (uint64_t i = 0; i < length; ++i) {
-      entries[i].dump(out);
-    }
+    out.write(reinterpret_cast<const char*>(&n_of_entries), sizeof(n_of_entries));
+    out.write(reinterpret_cast<const char*>(&n_of_chars), sizeof(n_of_chars));
+    out.write(reinterpret_cast<const char*>(entries), sizeof(Entry) * n_of_entries);
+    out.write(reinterpret_cast<const char*>(paths), sizeof(char) * n_of_chars);
     out.close();
     return true;
   }
@@ -34,15 +23,17 @@ bool stardock::Index::dump(std::string path) const {
 }
 
 bool stardock::Index::load(std::string path) {
-  entries.clear();
+  clear();
   std::ifstream in(path, std::ios::binary | std::ios::in);
   if (in.is_open()) {
-    uint64_t length = 0;
-    in.read(reinterpret_cast<char*>(&length), sizeof(length));
-    entries.resize(length);
-    for (uint64_t i = 0; i < length; ++i) {
-      entries[i].load(in);
-    }
+    in.read(reinterpret_cast<char*>(&n_of_entries), sizeof(n_of_entries));
+    in.read(reinterpret_cast<char*>(&n_of_chars), sizeof(n_of_chars));
+    entries = (Entry*) std::malloc (sizeof(Entry) * n_of_entries);
+    paths = (char*) std::malloc (sizeof(char) * n_of_chars);
+    in.read(reinterpret_cast<char*>(entries), sizeof(Entry) * n_of_entries);
+    in.read(reinterpret_cast<char*>(paths), sizeof(char) * n_of_chars);
+    entries_size = n_of_entries;
+    paths_size = n_of_chars;
     in.close();
     return true;
   }
@@ -51,17 +42,55 @@ bool stardock::Index::load(std::string path) {
 
 std::ostream& operator<<(std::ostream& out, const stardock::Index& index) {
   bool first = true;
-  for (const stardock::Index::Entry& entry : index.entries) {
+  for (uint64_t i = 0; i < index.n_of_entries; ++i) {
+    const stardock::Index::Entry& entry = index.entries[i];
     if (first) {
       first = false;
     } else {
       out << std::endl;
     }
-    out << entry;
+    out << index.path(i) << " | " << entry.file_size << " | " << entry.modified;
   }
   return out;
 }
 
-std::ostream& operator<<(std::ostream& out, const stardock::Index::Entry& entry) {
-  return out << entry.path << " | " << entry.file_size << " | " << entry.modified;
+void stardock::Index::push_back(std::string path, uint64_t file_size, uint64_t modified) {
+  if (n_of_entries + 1 > entries_size) {
+    entries_size += INDEX_ENTRIES_INCREMENT;
+    entries = (Entry*) std::realloc(entries, sizeof(Entry) * entries_size);
+  }
+  
+  uint64_t requested_path_size = n_of_chars + path.size() + 1;
+  if (requested_path_size > paths_size) {
+    paths_size += INDEX_PATHS_INCREMENT;
+    while(requested_path_size > paths_size) {
+      paths_size += INDEX_PATHS_INCREMENT;
+    }
+    paths = (char*) std::realloc(paths, sizeof(char) * paths_size);
+  }
+
+  Entry& entry = entries[n_of_entries];
+  entry.modified = modified;
+  entry.file_size = file_size;
+  entry.path_index = n_of_chars;
+  std::strcpy(paths + entry.path_index, path.c_str());
+  (paths + entry.path_index)[path.size()] = '\0';
+
+  n_of_entries += 1;
+  n_of_chars += path.size() + 1;
+}
+
+void stardock::Index::clear() {
+  IF_DIRTY_FREE_PTR(entries);
+  IF_DIRTY_FREE_PTR(paths);
+  n_of_chars = 0;
+  n_of_entries = 0;
+  entries_size = 0;
+  paths_size = 0;
+}
+
+void stardock::Index::sort() {
+  std::sort(entries, entries + n_of_entries, [this](const Entry& a, const Entry& b) {
+    return strcmp(paths + a.path_index, paths + b.path_index) < 0;
+  });
 }

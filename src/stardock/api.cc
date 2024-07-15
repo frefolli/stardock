@@ -16,7 +16,7 @@ inline void DoIndex(const stardock::Config& config, std::string path) {
   Open(point, path, config.refresh);
   if (config.verbose) {
     std::cout << "Indexed " << point.location << std::endl;
-    std::cout << "Indexed " << point.index.entries.size() << " files" << std::endl;
+    std::cout << "Indexed " << point.index.n_of_entries << " files" << std::endl;
     std::cout << point.index << std::endl;
   }
 }
